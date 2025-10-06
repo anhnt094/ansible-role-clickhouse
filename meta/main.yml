@@ -1,5 +1,7 @@
 #SPDX-License-Identifier: MIT-0
 galaxy_info:
+  role_name: clickhouse
+  namespace: anhnt094
   author: Anh Nguyen
   description: Ansible role for deploying ClickHouse clusters with Keeper support
   company: Personal Project
