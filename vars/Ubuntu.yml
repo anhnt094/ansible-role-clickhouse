@@ -1,0 +1,9 @@
+#SPDX-License-Identifier: MIT-0
+---
+# Ubuntu-specific variables
+
+# Package manager
+package_manager: apt
+
+# Service manager
+service_manager: systemd

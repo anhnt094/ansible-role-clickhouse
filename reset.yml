@@ -1,0 +1,215 @@
+#SPDX-License-Identifier: MIT-0
+---
+# ClickHouse Cluster Reset Playbook
+# This playbook completely removes ClickHouse installation and data
+# Use with caution - this will DELETE ALL DATA!
+#
+# Usage:
+#   ansible-playbook -i inventory.yml reset.yml
+#
+# To skip confirmation (dangerous!):
+#   ansible-playbook -i inventory.yml reset.yml -e reset_confirmation=yes
+
+- name: Confirm ClickHouse cluster reset
+  hosts: localhost
+  gather_facts: false
+  vars_prompt:
+    - name: reset_confirmation
+      prompt: |
+
+        ⚠️  WARNING: This will completely remove ClickHouse installation and ALL DATA! ⚠️
+
+        This playbook will:
+        - Stop all ClickHouse services
+        - Remove all ClickHouse packages
+        - Delete all data directories
+        - Delete all log files
+        - Delete all configuration files
+        - Remove ClickHouse user and group
+        - Clean up APT cache
+
+        Type 'yes' to confirm
+      private: false
+      default: "no"
+  tasks:
+    - name: Check confirmation
+      ansible.builtin.assert:
+        that:
+          - reset_confirmation == "yes"
+        fail_msg: "Reset cancelled. You must type 'yes' to confirm."
+        success_msg: "Confirmation received. Proceeding with reset..."
+
+- name: Reset ClickHouse Server nodes
+  hosts: clickhouse_cluster
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Stop ClickHouse Server service
+      ansible.builtin.systemd:
+        name: clickhouse-server
+        state: stopped
+        enabled: false
+      ignore_errors: true
+      register: server_stop
+
+    - name: Kill any remaining ClickHouse Server processes
+      ansible.builtin.shell: |
+        pkill -9 clickhouse-server || true
+        pkill -9 clickhouse || true
+      changed_when: false
+      ignore_errors: true
+
+    - name: Wait for ClickHouse Server processes to terminate
+      ansible.builtin.wait_for:
+        path: /var/run/clickhouse-server/clickhouse-server.pid
+        state: absent
+        timeout: 30
+      ignore_errors: true
+
+    - name: Remove ClickHouse Server package
+      ansible.builtin.apt:
+        name:
+          - clickhouse-server
+          - clickhouse-client
+          - clickhouse-common-static
+        state: absent
+        purge: true
+      ignore_errors: true
+
+    - name: Remove ClickHouse Server data directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/lib/clickhouse
+        - /var/log/clickhouse-server
+        - /etc/clickhouse-server
+        - /var/run/clickhouse-server
+      ignore_errors: true
+
+- name: Reset ClickHouse Keeper nodes
+  hosts: clickhouse_keeper
+  become: true
+  gather_facts: true
+  tasks:
+    - name: Stop ClickHouse Keeper service
+      ansible.builtin.systemd:
+        name: clickhouse-keeper
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Kill any remaining ClickHouse Keeper processes
+      ansible.builtin.shell: |
+        pkill -9 clickhouse-keeper || true
+      changed_when: false
+      ignore_errors: true
+
+    - name: Wait for ClickHouse Keeper processes to terminate
+      ansible.builtin.wait_for:
+        path: /var/run/clickhouse-keeper/clickhouse-keeper.pid
+        state: absent
+        timeout: 30
+      ignore_errors: true
+
+    - name: Remove ClickHouse Keeper package
+      ansible.builtin.apt:
+        name:
+          - clickhouse-keeper
+        state: absent
+        purge: true
+      ignore_errors: true
+
+    - name: Remove ClickHouse Keeper data directories
+      ansible.builtin.file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /var/lib/clickhouse/coordination
+        - /var/log/clickhouse-keeper
+        - /etc/clickhouse-keeper
+        - /var/run/clickhouse-keeper
+      ignore_errors: true
+
+- name: Cleanup common resources
+  hosts: clickhouse_cluster:clickhouse_keeper
+  become: true
+  gather_facts: false
+  tasks:
+    - name: Remove ClickHouse user
+      ansible.builtin.user:
+        name: clickhouse
+        state: absent
+        remove: true
+      ignore_errors: true
+
+    - name: Remove ClickHouse group
+      ansible.builtin.group:
+        name: clickhouse
+        state: absent
+      ignore_errors: true
+
+    - name: Remove ClickHouse APT repository
+      ansible.builtin.apt_repository:
+        repo: "deb https://packages.clickhouse.com/deb stable main"
+        state: absent
+      ignore_errors: true
+
+    - name: Remove ClickHouse GPG key
+      ansible.builtin.apt_key:
+        url: "https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key"
+        state: absent
+      ignore_errors: true
+
+    - name: Update APT cache
+      ansible.builtin.apt:
+        update_cache: true
+      ignore_errors: true
+
+    - name: Clean APT cache
+      ansible.builtin.apt:
+        autoclean: true
+        autoremove: true
+      ignore_errors: true
+
+    - name: Remove any remaining ClickHouse files
+      ansible.builtin.find:
+        paths:
+          - /tmp
+          - /var/tmp
+        patterns:
+          - "clickhouse*"
+          - "*.clickhouse"
+        recurse: false
+      register: clickhouse_temp_files
+      ignore_errors: true
+
+    - name: Delete temporary ClickHouse files
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ clickhouse_temp_files.files }}"
+      when: clickhouse_temp_files.files is defined
+      ignore_errors: true
+
+- name: Reset completion summary
+  hosts: localhost
+  gather_facts: false
+  tasks:
+    - name: Display reset summary
+      ansible.builtin.debug:
+        msg:
+          - "✅ ClickHouse reset completed successfully!"
+          - ""
+          - "The following has been removed:"
+          - "  - All ClickHouse services stopped and disabled"
+          - "  - All ClickHouse packages uninstalled"
+          - "  - All data directories deleted"
+          - "  - All log files deleted"
+          - "  - All configuration files deleted"
+          - "  - ClickHouse user and group removed"
+          - "  - APT repository and GPG keys removed"
+          - ""
+          - "Your servers are now clean and ready for a fresh ClickHouse installation."
+          - ""
+          - "To reinstall ClickHouse, run your installation playbook again."

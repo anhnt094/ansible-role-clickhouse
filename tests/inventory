@@ -1,0 +1,45 @@
+#SPDX-License-Identifier: MIT-0
+---
+# Test Inventory for ansible-role-clickhouse
+#
+# IMPORTANT: Update this file with your actual test hosts before running tests
+# See README.md and test-playbooks/ directory for complete inventory examples
+
+all:
+  hosts:
+    clickhouse1:
+      ansible_host: 192.168.1.10 # Update to your test host
+      ip: 192.168.1.10
+      access_ip: 192.168.1.10
+      clickhouse_keeper_id: 1
+      clickhouse_shard: 1
+      clickhouse_replica: 1
+
+    clickhouse2:
+      ansible_host: 192.168.1.11 # Update to your test host
+      ip: 192.168.1.11
+      access_ip: 192.168.1.11
+      clickhouse_keeper_id: 2
+      clickhouse_shard: 1
+      clickhouse_replica: 2
+
+    clickhouse3:
+      ansible_host: 192.168.1.12 # Update to your test host
+      ip: 192.168.1.12
+      access_ip: 192.168.1.12
+      clickhouse_keeper_id: 3
+      clickhouse_shard: 1
+      clickhouse_replica: 3
+
+  children:
+    clickhouse_cluster:
+      hosts:
+        clickhouse1:
+        clickhouse2:
+        clickhouse3:
+
+    clickhouse_keeper:
+      hosts:
+        clickhouse1:
+        clickhouse2:
+        clickhouse3:

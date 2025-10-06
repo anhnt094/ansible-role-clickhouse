@@ -1,0 +1,34 @@
+# Test playbooks directory (except examples)
+test-playbooks/*
+!test-playbooks/.gitignore
+!test-playbooks/README.md
+!test-playbooks/*.sample
+
+# Ansible
+*.retry
+# Keep ansible.cfg in repo
+!ansible.cfg
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Virtual environments
+venv/
+ENV/
+env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+

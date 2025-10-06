@@ -1,0 +1,332 @@
+#SPDX-License-Identifier: MIT-0
+---
+# Installation tasks for Ubuntu
+
+# Task 0: Create ClickHouse user and group
+- name: Create ClickHouse group
+  ansible.builtin.group:
+    name: "{{ clickhouse_group }}"
+    state: present
+    system: true
+  tags:
+    - clickhouse
+    - user
+
+- name: Create ClickHouse user
+  ansible.builtin.user:
+    name: "{{ clickhouse_user }}"
+    group: "{{ clickhouse_group }}"
+    shell: /bin/false
+    home: "{{ clickhouse_path_base }}"
+    createhome: false
+    system: true
+    state: present
+  tags:
+    - clickhouse
+    - user
+
+# Task 1: Add ClickHouse GPG key and repository for Ubuntu
+- name: Add ClickHouse GPG key
+  ansible.builtin.apt_key:
+    url: "{{ clickhouse_repo_key_url }}"
+    state: present
+  register: clickhouse_key_added
+  retries: 3
+  delay: 5
+  until: clickhouse_key_added is succeeded
+  tags:
+    - clickhouse
+    - repository
+
+- name: Add ClickHouse repository
+  ansible.builtin.apt_repository:
+    repo: "{{ clickhouse_repo_url }}"
+    state: present
+    filename: clickhouse
+    update_cache: false
+  register: clickhouse_repo_added
+  tags:
+    - clickhouse
+    - repository
+
+# Task 2: Update apt cache
+- name: Update apt cache
+  ansible.builtin.apt:
+    update_cache: true
+    cache_valid_time: 3600
+  when: clickhouse_repo_added is changed
+  tags:
+    - clickhouse
+    - repository
+
+# Task 3: Install ClickHouse packages
+- name: Install ClickHouse Server package
+  ansible.builtin.apt:
+    name: "{{ clickhouse_packages | select('search', 'server') | list }}"
+    state: present
+    update_cache: true
+  when: clickhouse_server_enabled | bool
+  register: clickhouse_server_installed
+  tags:
+    - clickhouse
+    - install
+    - server
+
+- name: Install ClickHouse Client package
+  ansible.builtin.apt:
+    name: "{{ clickhouse_packages | select('search', 'client') | list }}"
+    state: present
+  when: clickhouse_server_enabled | bool or clickhouse_keeper_enabled | bool
+  tags:
+    - clickhouse
+    - install
+    - client
+
+- name: Install ClickHouse Keeper package
+  ansible.builtin.apt:
+    name: clickhouse-keeper
+    state: present
+  when: clickhouse_keeper_enabled | bool
+  register: clickhouse_keeper_installed
+  tags:
+    - clickhouse
+    - install
+    - keeper
+
+# Task 4: Create necessary directories
+- name: Create ClickHouse Server directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ clickhouse_user }}"
+    group: "{{ clickhouse_group }}"
+    mode: "0750"
+  loop:
+    - "{{ clickhouse_path_data }}"
+    - "{{ clickhouse_path_tmp }}"
+    - "{{ clickhouse_path_user_files }}"
+    - "{{ clickhouse_path_format_schema }}"
+    - "{{ clickhouse_path_log }}"
+    - "{{ clickhouse_path_config }}"
+  when: clickhouse_server_enabled | bool
+  tags:
+    - clickhouse
+    - directories
+    - server
+
+- name: Create ClickHouse Keeper directories
+  ansible.builtin.file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ clickhouse_user }}"
+    group: "{{ clickhouse_group }}"
+    mode: "0750"
+  loop:
+    - "{{ clickhouse_keeper_path }}"
+    - "{{ clickhouse_keeper_path }}/logs"
+    - "{{ clickhouse_keeper_path }}/snapshots"
+  when: clickhouse_keeper_enabled | bool
+  tags:
+    - clickhouse
+    - directories
+    - keeper
+
+# Task 6: Deploy configuration files (Best Practice: use config.d/ and users.d/)
+- name: Create ClickHouse Server config.d directory
+  ansible.builtin.file:
+    path: "{{ clickhouse_path_config }}/config.d"
+    state: directory
+    owner: "{{ clickhouse_user }}"
+    group: "{{ clickhouse_group }}"
+    mode: "0750"
+  when: clickhouse_server_enabled | bool
+  tags:
+    - clickhouse
+    - config
+    - server
+
+- name: Set config file extension based on format
+  ansible.builtin.set_fact:
+    clickhouse_config_ext: "{{ clickhouse_config_format }}"
+    clickhouse_config_ext_opposite: "{{ 'yaml' if clickhouse_config_format == 'xml' else 'xml' }}"
+  tags:
+    - clickhouse
+    - config
+
+# Remove old config files with opposite format to ensure consistency
+- name: Remove old ClickHouse Server network config (opposite format)
+  ansible.builtin.file:
+    path: "{{ clickhouse_path_config }}/config.d/network.{{ clickhouse_config_ext_opposite }}"
+    state: absent
+  when: clickhouse_server_enabled | bool
+  tags:
+    - clickhouse
+    - config
+    - server
+
+- name: Deploy ClickHouse Server network config
+  ansible.builtin.template:
+    src: "config.d/network.xml.j2"
+    dest: "{{ clickhouse_path_config }}/config.d/network.{{ clickhouse_config_ext }}"
+    owner: "{{ clickhouse_user }}"
+    group: "{{ clickhouse_group }}"
+    mode: "0640"
+    backup: true
+  when: clickhouse_server_enabled | bool
+  notify:
+    - restart clickhouse-server
+  tags:
+    - clickhouse
+    - config
+    - server
+
+- name: Remove old ClickHouse Server cluster config (opposite format)
+  ansible.builtin.file:
+    path: "{{ clickhouse_path_config }}/config.d/cluster.{{ clickhouse_config_ext_opposite }}"
+    state: absent
+  when:
+    - clickhouse_server_enabled | bool
+    - clickhouse_cluster_enabled | bool
+  tags:
+    - clickhouse
+    - config
+    - server
+    - cluster
+
+- name: Deploy ClickHouse Server cluster config
+  ansible.builtin.template:
+    src: "config.d/cluster.xml.j2"
+    dest: "{{ clickhouse_path_config }}/config.d/cluster.{{ clickhouse_config_ext }}"
+    owner: "{{ clickhouse_user }}"
+    group: "{{ clickhouse_group }}"
+    mode: "0640"
+    backup: true
+  when:
+    - clickhouse_server_enabled | bool
+    - clickhouse_cluster_enabled | bool
+  notify:
+    - restart clickhouse-server
+  tags:
+    - clickhouse
+    - config
+    - server
+    - cluster
+
+- name: Remove old ClickHouse Keeper client config (opposite format)
+  ansible.builtin.file:
+    path: "{{ clickhouse_path_config }}/config.d/keeper.{{ clickhouse_config_ext_opposite }}"
+    state: absent
+  when:
+    - clickhouse_server_enabled | bool
+    - groups['clickhouse_keeper'] is defined
+    - groups['clickhouse_keeper'] | length > 0
+  tags:
+    - clickhouse
+    - config
+    - server
+    - keeper
+
+- name: Deploy ClickHouse Keeper client config
+  ansible.builtin.template:
+    src: "config.d/keeper.xml.j2"
+    dest: "{{ clickhouse_path_config }}/config.d/keeper.{{ clickhouse_config_ext }}"
+    owner: "{{ clickhouse_user }}"
+    group: "{{ clickhouse_group }}"
+    mode: "0640"
+    backup: true
+  when:
+    - clickhouse_server_enabled | bool
+    - groups['clickhouse_keeper'] is defined
+    - groups['clickhouse_keeper'] | length > 0
+  notify:
+    - restart clickhouse-server
+  tags:
+    - clickhouse
+    - config
+    - server
+    - keeper
+
+- name: Remove old ClickHouse Keeper server config (opposite format)
+  ansible.builtin.file:
+    path: "/etc/clickhouse-keeper/keeper_config.{{ clickhouse_config_ext_opposite }}"
+    state: absent
+  when: clickhouse_keeper_enabled | bool
+  tags:
+    - clickhouse
+    - config
+    - keeper
+
+- name: Deploy ClickHouse Keeper server config
+  ansible.builtin.template:
+    src: "keeper_config.xml.j2"
+    dest: "/etc/clickhouse-keeper/keeper_config.{{ clickhouse_config_ext }}"
+    owner: "{{ clickhouse_user }}"
+    group: "{{ clickhouse_group }}"
+    mode: "0640"
+    backup: true
+  when: clickhouse_keeper_enabled | bool
+  notify:
+    - restart clickhouse-keeper
+  tags:
+    - clickhouse
+    - config
+    - keeper
+
+# Task 5: Start and enable ClickHouse services
+- name: Enable and start ClickHouse Server service
+  ansible.builtin.systemd:
+    name: clickhouse-server
+    enabled: "{{ clickhouse_service_enabled }}"
+    state: "{{ clickhouse_service_state }}"
+    daemon_reload: true
+  when:
+    - clickhouse_server_enabled | bool
+    - clickhouse_server_installed is changed
+  tags:
+    - clickhouse
+    - service
+    - server
+
+- name: Enable and start ClickHouse Keeper service
+  ansible.builtin.systemd:
+    name: clickhouse-keeper
+    enabled: "{{ clickhouse_service_enabled }}"
+    state: "{{ clickhouse_service_state }}"
+    daemon_reload: true
+  when:
+    - clickhouse_keeper_enabled | bool
+    - clickhouse_keeper_installed is changed
+  tags:
+    - clickhouse
+    - service
+    - keeper
+
+- name: Wait for ClickHouse Server to be ready
+  ansible.builtin.wait_for:
+    port: "{{ clickhouse_http_port }}"
+    host: "127.0.0.1"
+    delay: 5
+    timeout: 300
+    state: started
+  when:
+    - clickhouse_server_enabled | bool
+    - clickhouse_server_installed is changed
+  tags:
+    - clickhouse
+    - service
+    - server
+
+- name: Wait for ClickHouse Keeper to be ready
+  ansible.builtin.wait_for:
+    port: "{{ clickhouse_keeper_port }}"
+    host: "127.0.0.1"
+    delay: 5
+    timeout: 300
+    state: started
+  when:
+    - clickhouse_keeper_enabled | bool
+    - clickhouse_keeper_installed is changed
+  tags:
+    - clickhouse
+    - service
+    - keeper

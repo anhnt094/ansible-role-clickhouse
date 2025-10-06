@@ -1,0 +1,55 @@
+#SPDX-License-Identifier: MIT-0
+---
+# Test playbook for ansible-role-clickhouse
+# This tests a 3-node replicated cluster with ClickHouse Keeper
+
+- name: Deploy ClickHouse Cluster
+  hosts: clickhouse_cluster
+  become: true
+  roles:
+    - role: ansible-role-clickhouse
+
+- name: Verify ClickHouse Server is running
+  hosts: clickhouse_cluster
+  become: true
+  tasks:
+    - name: Check ClickHouse Server service status
+      ansible.builtin.systemd:
+        name: clickhouse-server
+        state: started
+      register: server_status
+      failed_when: server_status.status.ActiveState != "active"
+
+    - name: Test ClickHouse HTTP interface
+      ansible.builtin.uri:
+        url: "http://127.0.0.1:8123/?query=SELECT%201"
+        return_content: true
+      register: http_test
+      failed_when: http_test.content != "1\n"
+
+    - name: Display ClickHouse version
+      ansible.builtin.command: clickhouse-server --version
+      register: version_output
+      changed_when: false
+
+    - name: Show version
+      ansible.builtin.debug:
+        msg: "{{ version_output.stdout }}"
+
+- name: Verify ClickHouse Keeper is running
+  hosts: clickhouse_keeper
+  become: true
+  tasks:
+    - name: Check ClickHouse Keeper service status
+      ansible.builtin.systemd:
+        name: clickhouse-keeper
+        state: started
+      register: keeper_status
+      failed_when: keeper_status.status.ActiveState != "active"
+
+    - name: Test Keeper is accessible
+      ansible.builtin.wait_for:
+        host: 127.0.0.1
+        port: 9181
+        state: started
+        timeout: 10

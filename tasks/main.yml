@@ -1,0 +1,34 @@
+#SPDX-License-Identifier: MIT-0
+---
+# tasks file for ansible-role-clickhouse
+
+- name: Gather OS specific variables
+  ansible.builtin.include_vars: "{{ item }}"
+  with_first_found:
+    - files:
+        - "{{ ansible_distribution }}-{{ ansible_distribution_version }}.yml"
+        - "{{ ansible_distribution }}-{{ ansible_distribution_major_version }}.yml"
+        - "{{ ansible_distribution }}.yml"
+        - "{{ ansible_os_family }}.yml"
+        - "default.yml"
+      paths:
+        - "{{ role_path }}/vars"
+  tags:
+    - always
+
+- name: Check if OS is supported
+  ansible.builtin.assert:
+    that:
+      - ansible_os_family == "Debian"
+      - ansible_distribution == "Ubuntu"
+      - ansible_distribution_major_version == "24"
+    fail_msg: "This role currently only supports Ubuntu 24. Detected: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+    success_msg: "OS check passed: {{ ansible_distribution }} {{ ansible_distribution_version }}"
+  tags:
+    - always
+
+- name: Include Ubuntu 24.04 tasks
+  ansible.builtin.include_tasks: ubuntu-24.yml
+  tags:
+    - clickhouse
+    - install

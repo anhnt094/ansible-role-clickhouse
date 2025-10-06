@@ -1,0 +1,65 @@
+#SPDX-License-Identifier: MIT-0
+---
+# defaults file for ansible-role-clickhouse
+
+# ClickHouse version
+clickhouse_version: "latest"
+
+# ClickHouse repository configuration
+clickhouse_repo_key_url: "https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key"
+clickhouse_repo_url: "deb https://packages.clickhouse.com/deb stable main"
+
+# ClickHouse packages to install
+clickhouse_packages:
+  - clickhouse-server
+  - clickhouse-client
+  - clickhouse-common-static
+
+# ClickHouse service
+clickhouse_service_enabled: true
+clickhouse_service_state: started
+
+# ClickHouse user and group
+clickhouse_user: clickhouse
+clickhouse_group: clickhouse
+
+# ClickHouse network configuration
+clickhouse_http_port: 8123
+clickhouse_tcp_port: 9000
+clickhouse_interserver_http_port: 9009
+
+# ClickHouse directories
+clickhouse_path_base: /var/lib/clickhouse
+clickhouse_path_data: "{{ clickhouse_path_base }}"
+clickhouse_path_tmp: "{{ clickhouse_path_base }}/tmp"
+clickhouse_path_user_files: "{{ clickhouse_path_base }}/user_files"
+clickhouse_path_format_schema: "{{ clickhouse_path_base }}/format_schemas"
+clickhouse_path_log: /var/log/clickhouse-server
+clickhouse_path_config: /etc/clickhouse-server
+
+# Cluster configuration
+clickhouse_cluster_name: "cluster1"
+clickhouse_cluster_enabled: "{{ groups['clickhouse_cluster'] | default([]) | length > 1 }}"
+
+# ClickHouse Keeper configuration
+clickhouse_keeper_enabled: "{{ inventory_hostname in groups['clickhouse_keeper'] | default([]) }}"
+clickhouse_keeper_port: 9181
+clickhouse_keeper_raft_port: 9234
+clickhouse_keeper_path: /var/lib/clickhouse/coordination
+
+# ClickHouse Server configuration
+clickhouse_server_enabled: "{{ inventory_hostname in groups['clickhouse_cluster'] | default([]) }}"
+
+# Listen addresses (auto-detect from inventory)
+clickhouse_listen_host: "{{ ip | default(ansible_default_ipv4.address) }}"
+clickhouse_advertise_host: "{{ access_ip | default(ip) | default(ansible_default_ipv4.address) }}"
+
+# Sharding and replication (auto-detected from inventory host vars)
+clickhouse_shard_id: "{{ clickhouse_shard | default(1) }}"
+clickhouse_replica_id: "{{ clickhouse_replica | default(1) }}"
+
+# ZooKeeper / ClickHouse Keeper ensemble (auto-generated from inventory)
+clickhouse_keeper_servers: [] # Will be populated from groups['clickhouse_keeper']
+
+# Configuration format: xml or yaml
+clickhouse_config_format: xml

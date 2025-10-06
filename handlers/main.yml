@@ -1,0 +1,54 @@
+#SPDX-License-Identifier: MIT-0
+---
+# handlers file for ansible-role-clickhouse
+
+- name: Restart ClickHouse Server
+  ansible.builtin.systemd:
+    name: clickhouse-server
+    state: restarted
+    daemon_reload: true
+  when: clickhouse_server_enabled | bool
+  listen: restart clickhouse-server
+
+- name: Reload ClickHouse Server
+  ansible.builtin.systemd:
+    name: clickhouse-server
+    state: reloaded
+  when: clickhouse_server_enabled | bool
+  listen: reload clickhouse-server
+
+- name: Restart ClickHouse Keeper
+  ansible.builtin.systemd:
+    name: clickhouse-keeper
+    state: restarted
+    daemon_reload: true
+  when: clickhouse_keeper_enabled | bool
+  listen: restart clickhouse-keeper
+
+- name: Reload ClickHouse Keeper
+  ansible.builtin.systemd:
+    name: clickhouse-keeper
+    state: reloaded
+  when: clickhouse_keeper_enabled | bool
+  listen: reload clickhouse-keeper
+
+- name: Restart ClickHouse Services
+  ansible.builtin.systemd:
+    name: "{{ item }}"
+    state: restarted
+    daemon_reload: true
+  loop:
+    - clickhouse-server
+    - clickhouse-keeper
+  when:
+    - item == 'clickhouse-server' and clickhouse_server_enabled | bool
+    - item == 'clickhouse-keeper' and clickhouse_keeper_enabled | bool
+  listen: restart clickhouse
+
+- name: Validate ClickHouse Server config
+  ansible.builtin.command: clickhouse-server --config-file={{ clickhouse_path_config }}/config.xml --test
+  register: clickhouse_config_test
+  changed_when: false
+  failed_when: clickhouse_config_test.rc != 0
+  when: clickhouse_server_enabled | bool
+  listen: validate clickhouse config

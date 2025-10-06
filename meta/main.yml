@@ -1,0 +1,28 @@
+#SPDX-License-Identifier: MIT-0
+galaxy_info:
+  author: Anh Nguyen
+  description: Ansible role for deploying ClickHouse clusters with Keeper support
+  company: Personal Project
+
+  license: MIT
+
+  min_ansible_version: "2.9"
+
+  platforms:
+    - name: Ubuntu
+      versions:
+        - noble # 24.04 LTS
+
+  galaxy_tags:
+    - clickhouse
+    - database
+    - analytics
+    - olap
+    - datawarehouse
+    - keeper
+    - cluster
+    - distributed
+    - columnar
+    - timeseries
+
+dependencies: []
