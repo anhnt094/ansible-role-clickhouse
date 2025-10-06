@@ -1,4 +1,4 @@
-#SPDX-License-Identifier: MIT-0
+# SPDX-License-Identifier: MIT-0
 ---
 # Installation tasks for Ubuntu
 
@@ -54,7 +54,6 @@
   ansible.builtin.apt:
     update_cache: true
     cache_valid_time: 3600
-  when: clickhouse_repo_added is changed
   tags:
     - clickhouse
     - repository

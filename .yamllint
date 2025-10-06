@@ -7,6 +7,7 @@ rules:
     level: warning
   comments:
     min-spaces-from-content: 1
+  comments-indentation: false
   braces:
     max-spaces-inside: 1
   brackets:
@@ -14,6 +15,9 @@ rules:
   indentation:
     spaces: 2
     indent-sequences: true
+  octal-values:
+    forbid-implicit-octal: true
+    forbid-explicit-octal: true
 
 ignore: |
   test-playbooks/

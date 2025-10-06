@@ -1,4 +1,4 @@
-#SPDX-License-Identifier: MIT-0
+# SPDX-License-Identifier: MIT-0
 ---
 # Test playbook for ansible-role-clickhouse
 # This tests a 3-node replicated cluster with ClickHouse Keeper
@@ -7,7 +7,7 @@
   hosts: clickhouse_cluster
   become: true
   roles:
-    - role: ansible-role-clickhouse
+    - role: ../../
 
 - name: Verify ClickHouse Server is running
   hosts: clickhouse_cluster

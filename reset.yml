@@ -1,4 +1,4 @@
-#SPDX-License-Identifier: MIT-0
+# SPDX-License-Identifier: MIT-0
 ---
 # ClickHouse Cluster Reset Playbook
 # This playbook completely removes ClickHouse installation and data
@@ -49,7 +49,7 @@
         name: clickhouse-server
         state: stopped
         enabled: false
-      ignore_errors: true
+      failed_when: false
       register: server_stop
 
     - name: Kill any remaining ClickHouse Server processes
@@ -57,14 +57,14 @@
         pkill -9 clickhouse-server || true
         pkill -9 clickhouse || true
       changed_when: false
-      ignore_errors: true
+      failed_when: false
 
     - name: Wait for ClickHouse Server processes to terminate
       ansible.builtin.wait_for:
         path: /var/run/clickhouse-server/clickhouse-server.pid
         state: absent
         timeout: 30
-      ignore_errors: true
+      failed_when: false
 
     - name: Remove ClickHouse Server package
       ansible.builtin.apt:
@@ -74,7 +74,7 @@
           - clickhouse-common-static
         state: absent
         purge: true
-      ignore_errors: true
+      failed_when: false
 
     - name: Remove ClickHouse Server data directories
       ansible.builtin.file:
@@ -85,7 +85,7 @@
         - /var/log/clickhouse-server
         - /etc/clickhouse-server
         - /var/run/clickhouse-server
-      ignore_errors: true
+      failed_when: false
 
 - name: Reset ClickHouse Keeper nodes
   hosts: clickhouse_keeper
@@ -97,20 +97,20 @@
         name: clickhouse-keeper
         state: stopped
         enabled: false
-      ignore_errors: true
+      failed_when: false
 
     - name: Kill any remaining ClickHouse Keeper processes
       ansible.builtin.shell: |
         pkill -9 clickhouse-keeper || true
       changed_when: false
-      ignore_errors: true
+      failed_when: false
 
     - name: Wait for ClickHouse Keeper processes to terminate
       ansible.builtin.wait_for:
         path: /var/run/clickhouse-keeper/clickhouse-keeper.pid
         state: absent
         timeout: 30
-      ignore_errors: true
+      failed_when: false
 
     - name: Remove ClickHouse Keeper package
       ansible.builtin.apt:
@@ -118,7 +118,7 @@
           - clickhouse-keeper
         state: absent
         purge: true
-      ignore_errors: true
+      failed_when: false
 
     - name: Remove ClickHouse Keeper data directories
       ansible.builtin.file:
@@ -129,7 +129,7 @@
         - /var/log/clickhouse-keeper
         - /etc/clickhouse-keeper
         - /var/run/clickhouse-keeper
-      ignore_errors: true
+      failed_when: false
 
 - name: Cleanup common resources
   hosts: clickhouse_cluster:clickhouse_keeper
@@ -141,36 +141,36 @@
         name: clickhouse
         state: absent
         remove: true
-      ignore_errors: true
+      failed_when: false
 
     - name: Remove ClickHouse group
       ansible.builtin.group:
         name: clickhouse
         state: absent
-      ignore_errors: true
+      failed_when: false
 
     - name: Remove ClickHouse APT repository
       ansible.builtin.apt_repository:
         repo: "deb https://packages.clickhouse.com/deb stable main"
         state: absent
-      ignore_errors: true
+      failed_when: false
 
     - name: Remove ClickHouse GPG key
       ansible.builtin.apt_key:
         url: "https://packages.clickhouse.com/rpm/lts/repodata/repomd.xml.key"
         state: absent
-      ignore_errors: true
+      failed_when: false
 
     - name: Update APT cache
       ansible.builtin.apt:
         update_cache: true
-      ignore_errors: true
+      failed_when: false
 
     - name: Clean APT cache
       ansible.builtin.apt:
         autoclean: true
         autoremove: true
-      ignore_errors: true
+      failed_when: false
 
     - name: Remove any remaining ClickHouse files
       ansible.builtin.find:
@@ -182,7 +182,7 @@
           - "*.clickhouse"
         recurse: false
       register: clickhouse_temp_files
-      ignore_errors: true
+      failed_when: false
 
     - name: Delete temporary ClickHouse files
       ansible.builtin.file:
@@ -190,7 +190,7 @@
         state: absent
       loop: "{{ clickhouse_temp_files.files }}"
       when: clickhouse_temp_files.files is defined
-      ignore_errors: true
+      failed_when: false
 
 - name: Reset completion summary
   hosts: localhost
