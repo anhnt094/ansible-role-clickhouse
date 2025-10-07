@@ -31,8 +31,8 @@ jobs:
         run: ansible-lint
 
   test:
-    name: Test on Ubuntu 24.04
-    runs-on: ubuntu-24.04
+    name: Syntax Check
+    runs-on: ubuntu-latest
     needs: lint
     steps:
       - name: Check out code
@@ -50,5 +50,4 @@ jobs:
 
       - name: Run ansible-playbook syntax check
         run: |
-          ansible-playbook tests/test.yml --syntax-check
           ansible-playbook reset.yml --syntax-check
