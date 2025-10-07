@@ -59,38 +59,21 @@
     - repository
 
 # Task 3: Install ClickHouse packages
-- name: Install ClickHouse Server package
+# Note: Always install clickhouse-server and clickhouse-client packages.
+# ClickHouse Keeper binary is included in clickhouse-server package.
+# We do NOT install the separate clickhouse-keeper package to avoid conflicts.
+- name: Install ClickHouse packages (server and client)
   ansible.builtin.apt:
-    name: "{{ clickhouse_packages | select('search', 'server') | list }}"
+    name:
+      - clickhouse-server
+      - clickhouse-client
+      - clickhouse-common-static
     state: present
     update_cache: true
-  when: clickhouse_server_enabled | bool
-  register: clickhouse_server_installed
+  register: clickhouse_packages_installed
   tags:
     - clickhouse
     - install
-    - server
-
-- name: Install ClickHouse Client package
-  ansible.builtin.apt:
-    name: "{{ clickhouse_packages | select('search', 'client') | list }}"
-    state: present
-  when: clickhouse_server_enabled | bool or clickhouse_keeper_enabled | bool
-  tags:
-    - clickhouse
-    - install
-    - client
-
-- name: Install ClickHouse Keeper package
-  ansible.builtin.apt:
-    name: clickhouse-keeper
-    state: present
-  when: clickhouse_keeper_enabled | bool
-  register: clickhouse_keeper_installed
-  tags:
-    - clickhouse
-    - install
-    - keeper
 
 # Task 4: Create necessary directories
 - name: Create ClickHouse Server directories
@@ -272,29 +255,25 @@
     - keeper
 
 # Task 5: Start and enable ClickHouse services
+# Note: ClickHouse Server package includes both clickhouse-server and clickhouse-keeper binaries.
+# We start the appropriate service(s) based on the role configuration.
 - name: Enable and start ClickHouse Server service
-  ansible.builtin.systemd:
+  ansible.builtin.service:
     name: clickhouse-server
     enabled: "{{ clickhouse_service_enabled }}"
     state: "{{ clickhouse_service_state }}"
-    daemon_reload: true
-  when:
-    - clickhouse_server_enabled | bool
-    - clickhouse_server_installed is changed
+  when: clickhouse_server_enabled | bool
   tags:
     - clickhouse
     - service
     - server
 
 - name: Enable and start ClickHouse Keeper service
-  ansible.builtin.systemd:
+  ansible.builtin.service:
     name: clickhouse-keeper
     enabled: "{{ clickhouse_service_enabled }}"
     state: "{{ clickhouse_service_state }}"
-    daemon_reload: true
-  when:
-    - clickhouse_keeper_enabled | bool
-    - clickhouse_keeper_installed is changed
+  when: clickhouse_keeper_enabled | bool
   tags:
     - clickhouse
     - service
@@ -303,13 +282,11 @@
 - name: Wait for ClickHouse Server to be ready
   ansible.builtin.wait_for:
     port: "{{ clickhouse_http_port }}"
-    host: "127.0.0.1"
+    host: "{{ clickhouse_listen_host }}"
     delay: 5
     timeout: 300
     state: started
-  when:
-    - clickhouse_server_enabled | bool
-    - clickhouse_server_installed is changed
+  when: clickhouse_server_enabled | bool
   tags:
     - clickhouse
     - service
@@ -318,13 +295,11 @@
 - name: Wait for ClickHouse Keeper to be ready
   ansible.builtin.wait_for:
     port: "{{ clickhouse_keeper_port }}"
-    host: "127.0.0.1"
+    host: "{{ clickhouse_listen_host }}"
     delay: 5
     timeout: 300
     state: started
-  when:
-    - clickhouse_keeper_enabled | bool
-    - clickhouse_keeper_installed is changed
+  when: clickhouse_keeper_enabled | bool
   tags:
     - clickhouse
     - service
