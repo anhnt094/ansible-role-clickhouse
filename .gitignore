@@ -6,6 +6,7 @@ test-playbooks/*
 
 # Ansible
 *.retry
+.ansible/
 # Keep ansible.cfg in repo
 !ansible.cfg
 
