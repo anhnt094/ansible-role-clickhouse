@@ -1,0 +1,37 @@
+---
+alwaysApply: true
+---
+
+# Ansible Lint Validation
+
+Always run `ansible-lint` locally before committing any changes to Ansible files.
+
+## Validation Steps
+
+1. Run validation:
+
+   ```bash
+   export PATH="$HOME/Library/Python/3.13/bin:$PATH"
+   ansible-lint
+   ```
+
+2. Ensure exit code is 0 (success)
+3. Ensure it passes the **production** profile
+4. Fix any errors before committing
+
+## Common Files to Validate
+
+- [defaults/main.yml](mdc:defaults/main.yml)
+- [handlers/main.yml](mdc:handlers/main.yml)
+- [meta/main.yml](mdc:meta/main.yml)
+- [tasks/main.yml](mdc:tasks/main.yml)
+- [tasks/ubuntu-24.yml](mdc:tasks/ubuntu-24.yml)
+- [reset.yml](mdc:reset.yml)
+- [.yamllint](mdc:.yamllint)
+
+## Quick Fixes
+
+- Use `failed_when: false` instead of `ignore_errors: true`
+- Add space after `#` in comments
+- Ensure `---` document start marker exists
+- Use `role_name` and `namespace` in [meta/main.yml](mdc:meta/main.yml)
