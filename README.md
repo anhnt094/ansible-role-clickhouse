@@ -64,10 +64,18 @@ clickhouse_advertise_host: "{{ access_ip }}" # Auto-detected from inventory
 ### Cluster Configuration
 
 ```yaml
-clickhouse_cluster_name: "cluster1" # Default cluster name
-clickhouse_cluster_enabled: auto # Auto-detected from inventory
-clickhouse_shard_id: "{{ clickhouse_shard }}" # From inventory host var
-clickhouse_replica_id: "{{ clickhouse_replica }}"
+# Multiple clusters configuration
+# Define clusters in inventory host vars:
+clickhouse_clusters:
+  cluster1:
+    shard: 1
+    replica: 1
+  cluster2:
+    shard: 1
+    replica: 2
+
+# Auto-detected from inventory
+clickhouse_cluster_enabled: auto
 ```
 
 ### ClickHouse Keeper
@@ -77,6 +85,28 @@ clickhouse_keeper_enabled: auto # Auto-detected from inventory
 clickhouse_keeper_port: 9181 # Client port
 clickhouse_keeper_raft_port: 9234 # Raft consensus port
 clickhouse_keeper_path: /var/lib/clickhouse/coordination
+```
+
+### User Management
+
+The role automatically configures the default user with necessary permissions for user management:
+
+```yaml
+# Default user permissions (automatically configured)
+# - access_management: Allows creating and managing users
+# - named_collection_control: Allows managing named collections
+# - show_named_collections: Allows viewing named collections
+# - show_named_collections_secrets: Allows viewing collection secrets
+```
+
+This enables the default user to create additional users and grant permissions:
+
+```sql
+-- Create new admin user
+CREATE USER admin IDENTIFIED BY 'secure_password';
+
+-- Grant all permissions
+GRANT ALL ON *.* TO admin WITH GRANT OPTION;
 ```
 
 ### Configuration Format
@@ -102,8 +132,7 @@ The role uses a Kubespray-inspired inventory structure:
 - `ip`: Internal communication IP (bind address)
 - `access_ip`: External/advertised IP (for cluster communication)
 - `clickhouse_keeper_id`: Unique Keeper server ID (1, 2, 3...)
-- `clickhouse_shard`: Shard number (1, 2, 3...)
-- `clickhouse_replica`: Replica number within shard (1, 2, 3...)
+- `clickhouse_clusters`: Dictionary of cluster configurations (see examples below)
 
 ### Host Groups
 
@@ -112,7 +141,7 @@ The role uses a Kubespray-inspired inventory structure:
 
 ## Example Inventories
 
-### 1. Standalone Server
+### 1. Standalone Server (Single Cluster)
 
 ```yaml
 all:
@@ -120,13 +149,17 @@ all:
     clickhouse1:
       ansible_host: 192.168.1.10
       ip: 192.168.1.10
+      clickhouse_clusters:
+        main:
+          shard: 1
+          replica: 1
   children:
     clickhouse_cluster:
       hosts:
         clickhouse1:
 ```
 
-### 2. Replicated Cluster (3 replicas)
+### 2. Replicated Cluster (1 shard, 3 replicas)
 
 ```yaml
 all:
@@ -136,24 +169,30 @@ all:
       ip: 10.0.1.10
       access_ip: 10.0.1.10
       clickhouse_keeper_id: 1
-      clickhouse_shard: 1
-      clickhouse_replica: 1
+      clickhouse_clusters:
+        main:
+          shard: 1
+          replica: 1
 
     clickhouse2:
       ansible_host: 192.168.1.11
       ip: 10.0.1.11
       access_ip: 10.0.1.11
       clickhouse_keeper_id: 2
-      clickhouse_shard: 1
-      clickhouse_replica: 2
+      clickhouse_clusters:
+        main:
+          shard: 1
+          replica: 2
 
     clickhouse3:
       ansible_host: 192.168.1.12
       ip: 10.0.1.12
       access_ip: 10.0.1.12
       clickhouse_keeper_id: 3
-      clickhouse_shard: 1
-      clickhouse_replica: 3
+      clickhouse_clusters:
+        main:
+          shard: 1
+          replica: 3
 
   children:
     clickhouse_cluster:
@@ -180,16 +219,20 @@ all:
       ip: 10.0.1.10
       access_ip: 10.0.1.10
       clickhouse_keeper_id: 1
-      clickhouse_shard: 1
-      clickhouse_replica: 1
+      clickhouse_clusters:
+        main:
+          shard: 1
+          replica: 1
 
     clickhouse2:
       ansible_host: 192.168.1.11
       ip: 10.0.1.11
       access_ip: 10.0.1.11
       clickhouse_keeper_id: 2
-      clickhouse_shard: 1
-      clickhouse_replica: 2
+      clickhouse_clusters:
+        main:
+          shard: 1
+          replica: 2
 
     # Shard 2
     clickhouse3:
@@ -197,15 +240,19 @@ all:
       ip: 10.0.1.12
       access_ip: 10.0.1.12
       clickhouse_keeper_id: 3
-      clickhouse_shard: 2
-      clickhouse_replica: 1
+      clickhouse_clusters:
+        main:
+          shard: 2
+          replica: 1
 
     clickhouse4:
       ansible_host: 192.168.1.13
       ip: 10.0.1.13
       access_ip: 10.0.1.13
-      clickhouse_shard: 2
-      clickhouse_replica: 2
+      clickhouse_clusters:
+        main:
+          shard: 2
+          replica: 2
 
   children:
     clickhouse_cluster:
@@ -220,6 +267,112 @@ all:
         clickhouse1:
         clickhouse2:
         clickhouse3:
+```
+
+### 4. Multiple Clusters
+
+Define multiple clusters on the same set of nodes:
+
+```yaml
+all:
+  hosts:
+    clickhouse1:
+      ansible_host: 192.168.1.10
+      ip: 10.0.1.10
+      access_ip: 10.0.1.10
+      clickhouse_keeper_id: 1
+      clickhouse_clusters:
+        dexmarket:
+          shard: 1
+          replica: 1
+        analytics:
+          shard: 1
+          replica: 1
+
+    clickhouse2:
+      ansible_host: 192.168.1.11
+      ip: 10.0.1.11
+      access_ip: 10.0.1.11
+      clickhouse_keeper_id: 2
+      clickhouse_clusters:
+        dexmarket:
+          shard: 1
+          replica: 2
+        analytics:
+          shard: 1
+          replica: 2
+
+    clickhouse3:
+      ansible_host: 192.168.1.12
+      ip: 10.0.1.12
+      access_ip: 10.0.1.12
+      clickhouse_keeper_id: 3
+      clickhouse_clusters:
+        dexmarket:
+          shard: 2
+          replica: 1
+        analytics:
+          shard: 1
+          replica: 3
+
+    clickhouse4:
+      ansible_host: 192.168.1.13
+      ip: 10.0.1.13
+      access_ip: 10.0.1.13
+      clickhouse_clusters:
+        dexmarket:
+          shard: 2
+          replica: 2
+
+  children:
+    clickhouse_cluster:
+      hosts:
+        clickhouse1:
+        clickhouse2:
+        clickhouse3:
+        clickhouse4:
+
+    clickhouse_keeper:
+      hosts:
+        clickhouse1:
+        clickhouse2:
+        clickhouse3:
+```
+
+This creates:
+
+- **dexmarket** cluster: 2 shards, 2 replicas per shard (4 nodes)
+- **analytics** cluster: 1 shard, 3 replicas (3 nodes, node4 excluded)
+
+Generated macros on each node (uses first cluster in alphabetical order):
+
+```xml
+<macros>
+  <cluster>analytics</cluster>
+  <shard>1</shard>
+  <replica>1</replica>
+</macros>
+```
+
+**Note**: Macros use the first cluster name in alphabetical order. In this example, "analytics" comes before "dexmarket", so macros point to analytics cluster.
+
+**Usage in SQL:**
+
+```sql
+-- Create table using macros (first cluster)
+CREATE TABLE my_table ON CLUSTER analytics
+ENGINE = ReplicatedMergeTree('/clickhouse/tables/{cluster}/{database}/{table}/{shard}', '{replica}')
+ORDER BY id;
+
+-- For other clusters, use explicit values or database-only path
+CREATE TABLE dexmarket_table ON CLUSTER dexmarket
+ENGINE = ReplicatedMergeTree('/clickhouse/tables/dexmarket/{database}/{table}', '1')
+ORDER BY id;
+
+-- Or use database-based path (recommended for multi-cluster)
+CREATE TABLE multi_table ON CLUSTER dexmarket
+ENGINE = ReplicatedMergeTree('/clickhouse/tables/{database}/{table}', '1')
+ORDER BY id;
 ```
 
 ## Example Playbooks

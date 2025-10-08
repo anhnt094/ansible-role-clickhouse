@@ -38,8 +38,18 @@ clickhouse_path_log: /var/log/clickhouse-server
 clickhouse_path_config: /etc/clickhouse-server
 
 # Cluster configuration
-clickhouse_cluster_name: "cluster1"
 clickhouse_cluster_enabled: "{{ groups['clickhouse_cluster'] | default([]) | length > 1 }}"
+
+# Multiple clusters configuration
+# Define clusters in inventory host vars:
+# clickhouse_clusters:
+#   cluster_name1:
+#     shard: 1
+#     replica: 1
+#   cluster_name2:
+#     shard: 1
+#     replica: 2
+clickhouse_clusters: {}
 
 # ClickHouse Keeper configuration
 clickhouse_keeper_enabled: "{{ inventory_hostname in groups['clickhouse_keeper'] | default([]) }}"
@@ -53,10 +63,6 @@ clickhouse_server_enabled: "{{ inventory_hostname in groups['clickhouse_cluster'
 # Listen addresses (auto-detect from inventory)
 clickhouse_listen_host: "{{ ip | default(ansible_default_ipv4.address) }}"
 clickhouse_advertise_host: "{{ access_ip | default(ip) | default(ansible_default_ipv4.address) }}"
-
-# Sharding and replication (auto-detected from inventory host vars)
-clickhouse_shard_id: "{{ clickhouse_shard | default(1) }}"
-clickhouse_replica_id: "{{ clickhouse_replica | default(1) }}"
 
 # ZooKeeper / ClickHouse Keeper ensemble (auto-generated from inventory)
 clickhouse_keeper_servers: [] # Will be populated from groups['clickhouse_keeper']

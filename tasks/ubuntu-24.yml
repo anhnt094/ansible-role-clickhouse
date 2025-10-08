@@ -238,6 +238,37 @@
     - config
     - keeper
 
+- name: Ensure users.d directory exists
+  ansible.builtin.file:
+    path: "{{ clickhouse_path_config }}/users.d"
+    state: directory
+    owner: "{{ clickhouse_user }}"
+    group: "{{ clickhouse_group }}"
+    mode: "0750"
+  when: clickhouse_server_enabled | bool
+  tags:
+    - clickhouse
+    - config
+    - server
+    - users
+
+- name: Deploy ClickHouse default user config
+  ansible.builtin.template:
+    src: "users.d/default.xml.j2"
+    dest: "{{ clickhouse_path_config }}/users.d/default.{{ clickhouse_config_ext }}"
+    owner: "{{ clickhouse_user }}"
+    group: "{{ clickhouse_group }}"
+    mode: "0640"
+    backup: true
+  when: clickhouse_server_enabled | bool
+  notify:
+    - restart clickhouse-server
+  tags:
+    - clickhouse
+    - config
+    - server
+    - users
+
 - name: Deploy ClickHouse Keeper server config
   ansible.builtin.template:
     src: "keeper_config.xml.j2"
