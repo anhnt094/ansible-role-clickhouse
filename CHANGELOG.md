@@ -5,6 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2025-10-08
+
+### Added
+
+- **Path Configuration Template**: New `config.d/path.xml.j2` template for centralized path management
+  - Configures `path` (data directory): `/var/lib/clickhouse/`
+  - Configures `tmp_path` (temporary data): `/var/lib/clickhouse/tmp/`
+  - Configures `user_files_path` (user files): `/var/lib/clickhouse/user_files/`
+  - Configures `format_schema_path` (format schemas): `/var/lib/clickhouse/format_schemas/`
+  - Configures `top_level_domains_path` (TLD list): `/var/lib/clickhouse/top_level_domains/`
+  - Configures `user_directories` (users.xml and local directory paths)
+  - Support for both XML and YAML formats
+  - Uses variables from `defaults/main.yml` for easy customization
+
+### Changed
+
+- **Deployment Tasks**: Updated `tasks/ubuntu-24.yml` to deploy path configuration
+  - Added automatic deployment of `path.xml` or `path.yaml` to `config.d/`
+  - Added cleanup task to remove old format files when switching between XML/YAML
+  - Path config deployed before cluster config in deployment sequence
+
+### Improved
+
+- **Configuration Management**: Better organization of path-related settings
+  - All path configurations in one dedicated template
+  - Consistent with ClickHouse best practices (trailing slashes required)
+  - Easy to override paths via inventory variables
+
 ## [1.0.3] - 2025-10-08
 
 ### Added
@@ -19,7 +47,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Enable `named_collection_control` for named collections
   - Enable `show_named_collections` and `show_named_collections_secrets`
   - Allows `GRANT ALL ON *.* WITH GRANT OPTION` without errors
-- **Example Inventories**: 
+- **Example Inventories**:
   - `hosts-multi-cluster.yml` - Full multi-cluster example
   - `example-add-second-cluster.yml.sample` - Adding second cluster to existing setup
 
@@ -37,7 +65,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Breaking: New Inventory Format**: 
+- **Breaking: New Inventory Format**:
   - Old format with `clickhouse_shard` and `clickhouse_replica` is removed
   - New format uses `clickhouse_clusters` dictionary:
     ```yaml
@@ -62,12 +90,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 To migrate from v1.0.0 to v1.0.3:
 
 **Old inventory format:**
+
 ```yaml
 clickhouse_shard: 1
 clickhouse_replica: 1
 ```
 
 **New inventory format:**
+
 ```yaml
 clickhouse_clusters:
   main:
@@ -108,5 +138,6 @@ clickhouse_clusters:
 - Ubuntu 24.04 LTS target hosts
 - Python 3 on target hosts
 
+[1.0.4]: https://github.com/anhnt094/ansible-role-clickhouse/releases/tag/v1.0.4
 [1.0.3]: https://github.com/anhnt094/ansible-role-clickhouse/releases/tag/v1.0.3
 [1.0.0]: https://github.com/anhnt094/ansible-role-clickhouse/releases/tag/v1.0.0

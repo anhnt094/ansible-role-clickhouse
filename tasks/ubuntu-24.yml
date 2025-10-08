@@ -162,6 +162,32 @@
     - config
     - server
 
+- name: Remove old ClickHouse Server path config (opposite format)
+  ansible.builtin.file:
+    path: "{{ clickhouse_path_config }}/config.d/path.{{ clickhouse_config_ext_opposite }}"
+    state: absent
+  when: clickhouse_server_enabled | bool
+  tags:
+    - clickhouse
+    - config
+    - server
+
+- name: Deploy ClickHouse Server path config
+  ansible.builtin.template:
+    src: "config.d/path.xml.j2"
+    dest: "{{ clickhouse_path_config }}/config.d/path.{{ clickhouse_config_ext }}"
+    owner: "{{ clickhouse_user }}"
+    group: "{{ clickhouse_group }}"
+    mode: "0640"
+    backup: true
+  when: clickhouse_server_enabled | bool
+  notify:
+    - restart clickhouse-server
+  tags:
+    - clickhouse
+    - config
+    - server
+
 - name: Remove old ClickHouse Server cluster config (opposite format)
   ansible.builtin.file:
     path: "{{ clickhouse_path_config }}/config.d/cluster.{{ clickhouse_config_ext_opposite }}"
