@@ -7,6 +7,16 @@
 <clickhouse>
     <users>
         <default>
+            <!-- Password: empty (no password required from allowed networks) -->
+            <password></password>
+            
+            <!-- Network access restrictions -->
+            <networks>
+{% for network in clickhouse_default_user_networks %}
+                <ip>{{ network }}</ip>
+{% endfor %}
+            </networks>
+            
             <!-- Enable access management for default user -->
             <access_management>1</access_management>
             
@@ -23,6 +33,15 @@
 
 users:
   default:
+    # Password: empty (no password required from allowed networks)
+    password: ""
+    
+    # Network access restrictions
+    networks:
+{% for network in clickhouse_default_user_networks %}
+      - {{ network }}
+{% endfor %}
+    
     # Enable access management for default user
     access_management: 1
     

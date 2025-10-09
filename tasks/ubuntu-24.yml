@@ -2,6 +2,48 @@
 ---
 # Installation tasks for Ubuntu
 
+# Security validation: Ensure default user network restrictions are set
+- name: Validate default user network restrictions
+  ansible.builtin.assert:
+    that:
+      - clickhouse_default_user_networks is defined
+      - clickhouse_default_user_networks | length > 0
+      - clickhouse_default_user_networks is not search('::\/0')
+      - clickhouse_default_user_networks is not search('::/0')
+    fail_msg: |
+      ⚠️  CRITICAL SECURITY ERROR ⚠️
+
+      The default ClickHouse user has NO NETWORK RESTRICTIONS configured!
+      This allows connections from ANY IP address (::0).
+      This leaves your ClickHouse server vulnerable to unauthorized access.
+
+      To fix this, set the 'clickhouse_default_user_networks' variable:
+
+      1. For localhost only (MOST SECURE):
+         clickhouse_default_user_networks:
+           - "::1"
+           - "127.0.0.1"
+
+      2. For private networks:
+         clickhouse_default_user_networks:
+           - "::1"
+           - "127.0.0.1"
+           - "10.0.0.0/8"
+           - "192.168.0.0/16"
+
+      3. For specific subnet:
+         clickhouse_default_user_networks:
+           - "203.0.113.0/24"
+
+      To disable this check (NOT RECOMMENDED for production):
+         clickhouse_default_user_networks_required: false
+    success_msg: "✓ Default user network restrictions are configured"
+  when: clickhouse_default_user_networks_required | default(true) | bool
+  tags:
+    - clickhouse
+    - security
+    - always
+
 # Task 0: Create ClickHouse user and group
 - name: Create ClickHouse group
   ansible.builtin.group:

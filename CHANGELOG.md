@@ -5,6 +5,36 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2025-10-09
+
+### Security
+
+- **Network Access Control for Default User**
+  - Added network restrictions for default ClickHouse user
+  - New variable: `clickhouse_default_user_networks` (default: `["::1", "127.0.0.1"]`)
+  - New variable: `clickhouse_default_user_networks_required` (default: `true`)
+  - Default configuration restricts access to localhost only
+  - Prevents unauthorized access from public networks
+  - Validation task fails if `::0` (all networks) is detected
+  - Can be disabled with `clickhouse_default_user_networks_required: false`
+
+### Added
+
+- **Network Restrictions Template**: Updated `templates/users.d/default.xml.j2`
+  - Added `<networks>` section with configurable IP ranges
+  - Supports both XML and YAML formats
+  - Password remains empty (no password required from allowed networks)
+- **Security Validation**: Pre-deployment check in `tasks/ubuntu-24.yml`
+  - Validates network restrictions are configured
+  - Provides clear error messages with configuration examples
+  - Can be bypassed if needed for specific use cases
+
+### Changed
+
+- **Example Playbooks**: Updated with network security configuration
+  - `test-playbooks/example-standalone.yml.sample`
+  - `test-playbooks/example-cluster.yml.sample`
+
 ## [1.0.4] - 2025-10-08
 
 ### Added

@@ -69,3 +69,11 @@ clickhouse_keeper_servers: [] # Will be populated from groups['clickhouse_keeper
 
 # Configuration format: xml or yaml
 clickhouse_config_format: xml
+
+# Network restrictions for default user
+clickhouse_default_user_networks:
+  - "::1" # IPv6 localhost
+  - "127.0.0.1" # IPv4 localhost
+
+# Set to true to require network restrictions (recommended for production)
+clickhouse_default_user_networks_required: true
