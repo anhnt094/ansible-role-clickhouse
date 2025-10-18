@@ -77,3 +77,6 @@ clickhouse_default_user_networks:
 
 # Set to true to require network restrictions (recommended for production)
 clickhouse_default_user_networks_required: true
+
+# Server configuration
+clickhouse_max_concurrent_queries: 1000

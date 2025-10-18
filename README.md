@@ -115,6 +115,13 @@ GRANT ALL ON *.* TO admin WITH GRANT OPTION;
 clickhouse_config_format: "xml" # "xml" or "yaml"
 ```
 
+### Server Configuration
+
+```yaml
+# Maximum number of simultaneously processed requests
+clickhouse_max_concurrent_queries: 1000 # Default: 1000
+```
+
 ### Service Management
 
 ```yaml
