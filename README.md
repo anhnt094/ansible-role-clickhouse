@@ -118,8 +118,10 @@ clickhouse_config_format: "xml" # "xml" or "yaml"
 ### Server Configuration
 
 ```yaml
-# Maximum number of simultaneously processed requests
-clickhouse_max_concurrent_queries: 1000 # Default: 1000
+clickhouse_max_concurrent_queries: 1000
+clickhouse_async_insert_threads: 16
+clickhouse_background_pool_size: 16
+clickhouse_max_connections: 4096
 ```
 
 ### Service Management

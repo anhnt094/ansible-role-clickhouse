@@ -7,7 +7,16 @@
 -->
 <clickhouse>
     <!-- Maximum number of simultaneously processed requests -->
-    <max_concurrent_queries>{{ clickhouse_max_concurrent_queries | default(1000) }}</max_concurrent_queries>
+    <max_concurrent_queries>{{ clickhouse_max_concurrent_queries }}</max_concurrent_queries>
+
+    <!-- Number of threads to handle async inserts -->
+    <async_insert_threads>{{ clickhouse_async_insert_threads }}</async_insert_threads>
+
+    <!-- Number of threads to perform background operations (merges, mutations, fetches) -->
+    <background_pool_size>{{ clickhouse_background_pool_size }}</background_pool_size>
+
+    <!-- Maximum number of inbound connections -->
+    <max_connections>{{ clickhouse_max_connections }}</max_connections>
 </clickhouse>
 {%- elif clickhouse_config_format == 'yaml' -%}
 # Server Configuration
@@ -15,6 +24,15 @@
 
 clickhouse:
   # Maximum number of simultaneously processed requests
-  max_concurrent_queries: {{ clickhouse_max_concurrent_queries | default(1000) }}
+  max_concurrent_queries: {{ clickhouse_max_concurrent_queries }}
+
+  # Number of threads to handle async inserts
+  async_insert_threads: {{ clickhouse_async_insert_threads }}
+
+  # Number of threads to perform background operations (merges, mutations, fetches)
+  background_pool_size: {{ clickhouse_background_pool_size }}
+
+  # Maximum number of inbound connections
+  max_connections: {{ clickhouse_max_connections }}
 {%- endif -%}
 

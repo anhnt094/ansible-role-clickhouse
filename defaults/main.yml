@@ -80,3 +80,6 @@ clickhouse_default_user_networks_required: true
 
 # Server configuration
 clickhouse_max_concurrent_queries: 1000
+clickhouse_async_insert_threads: 16
+clickhouse_background_pool_size: 16
+clickhouse_max_connections: 4096
