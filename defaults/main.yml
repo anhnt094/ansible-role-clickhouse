@@ -83,3 +83,11 @@ clickhouse_max_concurrent_queries: 1000
 clickhouse_async_insert_threads: 16
 clickhouse_background_pool_size: 16
 clickhouse_max_connections: 4096
+
+# Logging configuration
+# Acceptable values: none, fatal, critical, error, warning, notice, information, debug, trace, test
+clickhouse_log_level: information
+
+# Database atomic delay before drop table (in seconds)
+# The delay during which a dropped table can be restored using the UNDROP statement
+clickhouse_database_atomic_delay_before_drop_table_sec: 480

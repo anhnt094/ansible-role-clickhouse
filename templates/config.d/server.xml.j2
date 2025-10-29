@@ -17,6 +17,14 @@
 
     <!-- Maximum number of inbound connections -->
     <max_connections>{{ clickhouse_max_connections }}</max_connections>
+
+    <!-- Log level. Acceptable values: none, fatal, critical, error, warning, notice, information, debug, trace, test -->
+    <logger>
+        <level>{{ clickhouse_log_level }}</level>
+    </logger>
+
+    <!-- The delay during which a dropped table can be restored using the UNDROP statement (in seconds) -->
+    <database_atomic_delay_before_drop_table_sec>{{ clickhouse_database_atomic_delay_before_drop_table_sec }}</database_atomic_delay_before_drop_table_sec>
 </clickhouse>
 {%- elif clickhouse_config_format == 'yaml' -%}
 # Server Configuration
@@ -34,5 +42,12 @@ clickhouse:
 
   # Maximum number of inbound connections
   max_connections: {{ clickhouse_max_connections }}
+
+  # Log level. Acceptable values: none, fatal, critical, error, warning, notice, information, debug, trace, test
+  logger:
+    level: {{ clickhouse_log_level }}
+
+  # The delay during which a dropped table can be restored using the UNDROP statement (in seconds)
+  database_atomic_delay_before_drop_table_sec: {{ clickhouse_database_atomic_delay_before_drop_table_sec }}
 {%- endif -%}
 
