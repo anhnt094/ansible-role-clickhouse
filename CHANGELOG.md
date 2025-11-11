@@ -5,6 +5,32 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.9] - 2025-11-11
+
+### Added
+
+- **Zero-Downtime Keeper Scaling (Scale Out/In)**
+  - New variable: `clickhouse_keeper_scale_mode` (default: `false`)
+  - New variable: `clickhouse_keeper_path_config` (default: `/etc/clickhouse-keeper`)
+  - New variable: `clickhouse_keeper_enable_reconfiguration` (default: `true`)
+  - Comprehensive documentation: `KEEPER_SCALING.md`
+  - **Scale Out** (add nodes): config → start → reconfig → restart
+  - **Scale In** (remove nodes): config → reconfig → stop
+  - Dynamic reconfiguration support using Raft API
+
+### Fixed
+
+- Missing `/etc/clickhouse-keeper` directory creation
+- ClickHouse Server unnecessary restarts during Keeper scaling
+- Keeper config path now uses variable instead of hardcoded path
+
+### Changed
+
+- tasks/ubuntu-24.yml: Add scale mode conditions to prevent restarts
+- handlers/main.yml: Skip Keeper/Server restarts when in scale mode
+- templates/keeper_config.xml.j2: Add `enable_reconfiguration` setting
+- defaults/main.yml: Add scale mode and config path variables
+
 ## [1.0.5] - 2025-10-09
 
 ### Security

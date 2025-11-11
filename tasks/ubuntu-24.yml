@@ -149,6 +149,7 @@
     - "{{ clickhouse_keeper_path }}"
     - "{{ clickhouse_keeper_path }}/logs"
     - "{{ clickhouse_keeper_path }}/snapshots"
+    - "{{ clickhouse_keeper_path_config }}"
   when: clickhouse_keeper_enabled | bool
   tags:
     - clickhouse
@@ -314,8 +315,7 @@
     - clickhouse_server_enabled | bool
     - groups['clickhouse_keeper'] is defined
     - groups['clickhouse_keeper'] | length > 0
-  notify:
-    - restart clickhouse-server
+  notify: "{{ [] if clickhouse_keeper_scale_mode else ['restart clickhouse-server'] }}"
   tags:
     - clickhouse
     - config
@@ -324,7 +324,7 @@
 
 - name: Remove old ClickHouse Keeper server config (opposite format)
   ansible.builtin.file:
-    path: "/etc/clickhouse-keeper/keeper_config.{{ clickhouse_config_ext_opposite }}"
+    path: "{{ clickhouse_keeper_path_config }}/keeper_config.{{ clickhouse_config_ext_opposite }}"
     state: absent
   when: clickhouse_keeper_enabled | bool
   tags:
@@ -366,14 +366,13 @@
 - name: Deploy ClickHouse Keeper server config
   ansible.builtin.template:
     src: "keeper_config.xml.j2"
-    dest: "/etc/clickhouse-keeper/keeper_config.{{ clickhouse_config_ext }}"
+    dest: "{{ clickhouse_keeper_path_config }}/keeper_config.{{ clickhouse_config_ext }}"
     owner: "{{ clickhouse_user }}"
     group: "{{ clickhouse_group }}"
     mode: "0640"
     backup: true
   when: clickhouse_keeper_enabled | bool
-  notify:
-    - restart clickhouse-keeper
+  notify: "{{ [] if clickhouse_keeper_scale_mode else ['restart clickhouse-keeper'] }}"
   tags:
     - clickhouse
     - config
@@ -382,6 +381,19 @@
 # Task 5: Start and enable ClickHouse services
 # Note: ClickHouse Server package includes both clickhouse-server and clickhouse-keeper binaries.
 # We start the appropriate service(s) based on the role configuration.
+- name: Enable and start ClickHouse Keeper service
+  ansible.builtin.service:
+    name: clickhouse-keeper
+    enabled: "{{ clickhouse_service_enabled }}"
+    state: "{{ clickhouse_service_state }}"
+  when:
+    - clickhouse_keeper_enabled | bool
+    - not clickhouse_keeper_scale_mode
+  tags:
+    - clickhouse
+    - service
+    - keeper
+
 - name: Enable and start ClickHouse Server service
   ansible.builtin.service:
     name: clickhouse-server
@@ -392,17 +404,6 @@
     - clickhouse
     - service
     - server
-
-- name: Enable and start ClickHouse Keeper service
-  ansible.builtin.service:
-    name: clickhouse-keeper
-    enabled: "{{ clickhouse_service_enabled }}"
-    state: "{{ clickhouse_service_state }}"
-  when: clickhouse_keeper_enabled | bool
-  tags:
-    - clickhouse
-    - service
-    - keeper
 
 - name: Wait for ClickHouse Server to be ready
   ansible.builtin.wait_for:
@@ -424,7 +425,9 @@
     delay: 5
     timeout: 300
     state: started
-  when: clickhouse_keeper_enabled | bool
+  when:
+    - clickhouse_keeper_enabled | bool
+    - not clickhouse_keeper_scale_mode
   tags:
     - clickhouse
     - service

@@ -7,14 +7,18 @@
     name: clickhouse-server
     state: restarted
     daemon_reload: true
-  when: clickhouse_server_enabled | bool
+  when:
+    - clickhouse_server_enabled | bool
+    - not clickhouse_keeper_scale_mode
   listen: restart clickhouse-server
 
 - name: Reload ClickHouse Server
   ansible.builtin.systemd:
     name: clickhouse-server
     state: reloaded
-  when: clickhouse_server_enabled | bool
+  when:
+    - clickhouse_server_enabled | bool
+    - not clickhouse_keeper_scale_mode
   listen: reload clickhouse-server
 
 - name: Restart ClickHouse Keeper
@@ -22,14 +26,18 @@
     name: clickhouse-keeper
     state: restarted
     daemon_reload: true
-  when: clickhouse_keeper_enabled | bool
+  when:
+    - clickhouse_keeper_enabled | bool
+    - not clickhouse_keeper_scale_mode
   listen: restart clickhouse-keeper
 
 - name: Reload ClickHouse Keeper
   ansible.builtin.systemd:
     name: clickhouse-keeper
     state: reloaded
-  when: clickhouse_keeper_enabled | bool
+  when:
+    - clickhouse_keeper_enabled | bool
+    - not clickhouse_keeper_scale_mode
   listen: reload clickhouse-keeper
 
 - name: Restart ClickHouse Services

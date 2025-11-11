@@ -56,6 +56,8 @@ clickhouse_keeper_enabled: "{{ inventory_hostname in groups['clickhouse_keeper']
 clickhouse_keeper_port: 9181
 clickhouse_keeper_raft_port: 9234
 clickhouse_keeper_path: /var/lib/clickhouse/coordination
+clickhouse_keeper_path_config: /etc/clickhouse-keeper
+clickhouse_keeper_enable_reconfiguration: true
 
 # ClickHouse Server configuration
 clickhouse_server_enabled: "{{ inventory_hostname in groups['clickhouse_cluster'] | default([]) }}"
@@ -91,3 +93,7 @@ clickhouse_log_level: information
 # Database atomic delay before drop table (in seconds)
 # The delay during which a dropped table can be restored using the UNDROP statement
 clickhouse_database_atomic_delay_before_drop_table_sec: 480
+
+# Keeper scale mode - when true, prevents service restarts during config updates
+# Used for zero-downtime keeper scale out/in operations
+clickhouse_keeper_scale_mode: false

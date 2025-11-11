@@ -20,6 +20,7 @@
         <server_id>{{ clickhouse_keeper_id | default(1) }}</server_id>
         <log_storage_path>{{ clickhouse_keeper_path }}/logs</log_storage_path>
         <snapshot_storage_path>{{ clickhouse_keeper_path }}/snapshots</snapshot_storage_path>
+        <enable_reconfiguration>{{ clickhouse_keeper_enable_reconfiguration | lower }}</enable_reconfiguration>
 
         <coordination_settings>
             <operation_timeout_ms>10000</operation_timeout_ms>
@@ -57,6 +58,7 @@ clickhouse:
     server_id: {{ clickhouse_keeper_id | default(1) }}
     log_storage_path: {{ clickhouse_keeper_path }}/logs
     snapshot_storage_path: {{ clickhouse_keeper_path }}/snapshots
+    enable_reconfiguration: {{ clickhouse_keeper_enable_reconfiguration | lower }}
 
     coordination_settings:
       operation_timeout_ms: 10000

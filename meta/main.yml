@@ -14,7 +14,7 @@ galaxy_info:
   platforms:
     - name: Ubuntu
       versions:
-        - noble # 24.04 LTS
+        - all
 
   galaxy_tags:
     - clickhouse
