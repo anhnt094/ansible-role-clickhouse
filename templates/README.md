@@ -81,8 +81,6 @@ templates/
 
 **Variables:**
 
-- `clickhouse_cluster_name` - Cluster identifier
-- `clickhouse_shard_id` - Shard number from inventory
 - Auto-detects shards and replicas from inventory
 
 ---

@@ -401,7 +401,6 @@ ORDER BY id;
 - hosts: clickhouse_cluster
   become: true
   vars:
-    clickhouse_cluster_name: "production"
     clickhouse_config_format: "yaml"
   roles:
     - ansible-role-clickhouse

@@ -104,12 +104,13 @@
 # Note: Always install clickhouse-server and clickhouse-client packages.
 # ClickHouse Keeper binary is included in clickhouse-server package.
 # We do NOT install the separate clickhouse-keeper package to avoid conflicts.
+# All packages must be installed together to satisfy dependencies.
 - name: Install ClickHouse packages (server and client)
   ansible.builtin.apt:
     name:
-      - clickhouse-server
-      - clickhouse-client
-      - clickhouse-common-static
+      - "clickhouse-server{{ '' if clickhouse_version == 'latest' else '=' + clickhouse_version }}"
+      - "clickhouse-client{{ '' if clickhouse_version == 'latest' else '=' + clickhouse_version }}"
+      - "clickhouse-common-static{{ '' if clickhouse_version == 'latest' else '=' + clickhouse_version }}"
     state: present
     update_cache: true
   register: clickhouse_packages_installed

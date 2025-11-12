@@ -126,9 +126,6 @@ ssh user@192.168.1.10 "clickhouse-keeper-client -q 'ls /'"
 ```bash
 # Change to YAML format
 ansible-playbook -i inventory.yml deploy.yml -e clickhouse_config_format=yaml
-
-# Change cluster name
-ansible-playbook -i inventory.yml deploy.yml -e clickhouse_cluster_name=production
 ```
 
 ### Reset Cluster
